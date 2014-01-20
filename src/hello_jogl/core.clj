@@ -4,7 +4,8 @@
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
            (javax.media.opengl.glu GLU)
-           (com.jogamp.opengl.util FPSAnimator)))
+           (java.nio FloatBuffer IntBuffer)
+           (com.jogamp.opengl.util FPSAnimator GLBuffers)))
 
 (defn gl-listener [init-action reshape-action display-action dispose-action]
   (let [listener (proxy [GLEventListener] []
@@ -22,15 +23,74 @@
     (doto frame (.setSize width height) (.setVisible true) (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE))
     (.start (FPSAnimator. canvas target-framerate true))))
 
+(defn vertex-buffer-object [gl vertex-positions]
+  (let [vertex-array (int-array 1)
+        vertex-buffer (int-array 1)
+        position-buffer (GLBuffers/newDirectFloatBuffer (float-array vertex-positions))
+        print-errors (fn [context]
+                       (if (= (.glGetError context) javax.media.opengl.GL/GL_NO_ERROR)
+                         (println "BUFFER CREATED SUCCESSFULLY!")
+                         (println "ERROR CREATING BUFFER!")))]
+    (doto gl
+      (.glGenVertexArrays 1 (IntBuffer/wrap vertex-array))
+      (.glBindVertexArray (first vertex-array))
+      (.glGenBuffers 1 (IntBuffer/wrap vertex-buffer))
+      (.glBindBuffer javax.media.opengl.GL/GL_ARRAY_BUFFER (first vertex-buffer))
+      (.glBufferData javax.media.opengl.GL/GL_ARRAY_BUFFER (int (* (count vertex-positions) 4)) position-buffer javax.media.opengl.GL/GL_STATIC_DRAW)
+      (.glVertexAttribPointer 0 4 javax.media.opengl.GL/GL_FLOAT false 0 0)
+      (.glEnableVertexAttribArray 0))
+    (first vertex-array)))
+
 (defn gl-context-of [drawable]
-  (.getGL2 (.getGL drawable)))
+  (.getGL4 (.getGL drawable)))
+
+(def positions [ 0.0  1.0 0.0 1.0
+                -1.0 -1.0 0.0 1.0
+                 1.0 -1.0 0.0 1.0])
+
+(def vertex-shader-source
+  "#version 400
+  layout(location = 0) in vec4 in_Position;
+  void main(void)
+  {
+    gl_Position = in_Position;
+  }")
+
+(def fragment-shader-source
+  "#version 400
+  out vec4 out_Color;
+  void main(void)
+  {
+    out_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+  }")
+
+(def geometry nil)
+(def program nil)
+
+(defn create-shader-program [gl]
+  (let [shader-program (.glCreateProgram gl)
+        vertex-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_VERTEX_SHADER)
+        vs-source (into-array String [vertex-shader-source])
+        fragment-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_FRAGMENT_SHADER)
+        fs-source (into-array String [fragment-shader-source])]
+    (doto gl
+      (.glShaderSource vertex-shader 1 vs-source nil)
+      (.glCompileShader vertex-shader)
+      (.glShaderSource fragment-shader 1 fs-source nil)
+      (.glCompileShader fragment-shader)
+      (.glAttachShader shader-program vertex-shader)
+      (.glAttachShader shader-program fragment-shader)
+      (.glLinkProgram shader-program))
+    shader-program))
 
 (defn on-init [drawable]
   (let [gl (gl-context-of drawable)]
     (doto gl
       (.glClearColor 0 0 0 0)
       (.glClearDepth 1)
-      (.glEnable javax.media.opengl.GL2/GL_DEPTH_TEST))))
+      (.glEnable javax.media.opengl.GL2/GL_DEPTH_TEST))
+    (def geometry (vertex-buffer-object gl positions))
+    (def program (create-shader-program gl))))
 
 (defn on-reshape [drawable x y width height]
   (let [gl (gl-context-of drawable)
@@ -42,26 +102,13 @@
     (.gluPerspective (GLU.) 45.0 aspect 0.1 100.0)
     (.glMatrixMode gl javax.media.opengl.GL2/GL_MODELVIEW)))
 
-
-(def rotation 0)
-
 (defn on-display [drawable]
   (let [gl (gl-context-of drawable)]
     (doto gl
       (.glClear (bit-or javax.media.opengl.GL2/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-      (.glColor3f 1 1 1)
-      (.glLoadIdentity)
-      (.glTranslatef 0 0 -3)
-      (.glRotatef rotation 0 0 1)
-      (.glBegin javax.media.opengl.GL2/GL_TRIANGLES)
-        (.glColor3f 1 0 0)
-        (.glVertex3f  0  1 0)
-        (.glColor3f 0 1 0)
-        (.glVertex3f -1 -1 0)
-        (.glColor3f 0 0 1)
-        (.glVertex3f  1 -1 0)
-      (.glEnd)))
-  (def rotation (+ 0.3 rotation)))
+      (.glUseProgram program)
+      (.glBindVertexArray geometry)
+      (.glDrawArrays javax.media.opengl.GL/GL_TRIANGLES 0 3))))
 
 (defn -main
   [& args]

@@ -1,5 +1,6 @@
 (ns hello-jogl.core
   (:gen-class)
+  (:require (hello-jogl [shader-program :as shader-program]))
   (:import (javax.media.opengl.awt GLCanvas)
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
@@ -43,7 +44,6 @@
 (def positions [ 0.0  1.0 0.0 1.0
                 -1.0 -1.0 0.0 1.0
                  1.0 -1.0 0.0 1.0])
-
 (def vs
   "#version 400
   layout(location = 0) in vec4 in_Position;
@@ -57,27 +57,11 @@
   out vec4 out_Color;
   void main(void)
   {
-    out_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    out_Color = vec4(1.0f, 0.5f, 0.0f, 1.0f);
   }")
 
 (def geometry nil)
 (def program nil)
-
-(defn create-shader-program [gl vertex-shader-source fragment-shader-source]
-  (let [shader-program (.glCreateProgram gl)
-        vertex-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_VERTEX_SHADER)
-        vertex-shader-source (into-array String [vertex-shader-source])
-        fragment-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_FRAGMENT_SHADER)
-        fragment-shader-source (into-array String [fragment-shader-source])]
-    (doto gl
-      (.glShaderSource vertex-shader 1 vertex-shader-source nil)
-      (.glCompileShader vertex-shader)
-      (.glShaderSource fragment-shader 1 fragment-shader-source nil)
-      (.glCompileShader fragment-shader)
-      (.glAttachShader shader-program vertex-shader)
-      (.glAttachShader shader-program fragment-shader)
-      (.glLinkProgram shader-program))
-    shader-program))
 
 (defn on-init [drawable]
   (let [gl (gl-context-of drawable)]
@@ -86,7 +70,7 @@
       (.glClearDepth 1)
       (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
     (def geometry (vertex-buffer-object gl positions))
-    (def program (create-shader-program gl vs fs))))
+    (def program (shader-program/create gl vs fs))))
 
 (defn on-reshape [drawable x y width height]
   (let [gl (gl-context-of drawable)
@@ -96,12 +80,16 @@
 
 (defn on-display [drawable]
   (let [gl (gl-context-of drawable)]
+    (shader-program/use gl program)
     (doto gl
-      (.glClear (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL/GL_DEPTH_BUFFER_BIT))
-      (.glUseProgram program)
+      (.glClear (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
       (.glBindVertexArray geometry)
       (.glDrawArrays javax.media.opengl.GL/GL_TRIANGLES 0 3))))
 
+(defn on-dispose [drawable]
+  (let [gl (gl-context-of drawable)]
+    (shader-program/delete gl program)))
+
 (defn -main
   [& args]
-  (application "Hello world!" 800 600 60 on-init on-reshape on-display (fn [drawable] (println "Dispose"))))
+  (application "Hello world!" 800 600 60 on-init on-reshape on-display on-dispose))

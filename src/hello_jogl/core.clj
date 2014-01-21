@@ -26,11 +26,7 @@
 (defn vertex-buffer-object [gl vertex-positions]
   (let [vertex-array (int-array 1)
         vertex-buffer (int-array 1)
-        position-buffer (GLBuffers/newDirectFloatBuffer (float-array vertex-positions))
-        print-errors (fn [context]
-                       (if (= (.glGetError context) javax.media.opengl.GL/GL_NO_ERROR)
-                         (println "BUFFER CREATED SUCCESSFULLY!")
-                         (println "ERROR CREATING BUFFER!")))]
+        position-buffer (GLBuffers/newDirectFloatBuffer (float-array vertex-positions))]
     (doto gl
       (.glGenVertexArrays 1 (IntBuffer/wrap vertex-array))
       (.glBindVertexArray (first vertex-array))
@@ -48,7 +44,7 @@
                 -1.0 -1.0 0.0 1.0
                  1.0 -1.0 0.0 1.0])
 
-(def vertex-shader-source
+(def vs
   "#version 400
   layout(location = 0) in vec4 in_Position;
   void main(void)
@@ -56,7 +52,7 @@
     gl_Position = in_Position;
   }")
 
-(def fragment-shader-source
+(def fs
   "#version 400
   out vec4 out_Color;
   void main(void)
@@ -67,16 +63,16 @@
 (def geometry nil)
 (def program nil)
 
-(defn create-shader-program [gl]
+(defn create-shader-program [gl vertex-shader-source fragment-shader-source]
   (let [shader-program (.glCreateProgram gl)
         vertex-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_VERTEX_SHADER)
-        vs-source (into-array String [vertex-shader-source])
+        vertex-shader-source (into-array String [vertex-shader-source])
         fragment-shader (.glCreateShader gl javax.media.opengl.GL2ES2/GL_FRAGMENT_SHADER)
-        fs-source (into-array String [fragment-shader-source])]
+        fragment-shader-source (into-array String [fragment-shader-source])]
     (doto gl
-      (.glShaderSource vertex-shader 1 vs-source nil)
+      (.glShaderSource vertex-shader 1 vertex-shader-source nil)
       (.glCompileShader vertex-shader)
-      (.glShaderSource fragment-shader 1 fs-source nil)
+      (.glShaderSource fragment-shader 1 fragment-shader-source nil)
       (.glCompileShader fragment-shader)
       (.glAttachShader shader-program vertex-shader)
       (.glAttachShader shader-program fragment-shader)
@@ -88,24 +84,20 @@
     (doto gl
       (.glClearColor 0 0 0 0)
       (.glClearDepth 1)
-      (.glEnable javax.media.opengl.GL2/GL_DEPTH_TEST))
+      (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
     (def geometry (vertex-buffer-object gl positions))
-    (def program (create-shader-program gl))))
+    (def program (create-shader-program gl vs fs))))
 
 (defn on-reshape [drawable x y width height]
   (let [gl (gl-context-of drawable)
         aspect (double (/ width height))]
     (doto gl
-      (.glViewport 0 0 width height)
-      (.glMatrixMode javax.media.opengl.GL2/GL_PROJECTION)
-      (.glLoadIdentity))
-    (.gluPerspective (GLU.) 45.0 aspect 0.1 100.0)
-    (.glMatrixMode gl javax.media.opengl.GL2/GL_MODELVIEW)))
+      (.glViewport 0 0 width height))))
 
 (defn on-display [drawable]
   (let [gl (gl-context-of drawable)]
     (doto gl
-      (.glClear (bit-or javax.media.opengl.GL2/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
+      (.glClear (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL/GL_DEPTH_BUFFER_BIT))
       (.glUseProgram program)
       (.glBindVertexArray geometry)
       (.glDrawArrays javax.media.opengl.GL/GL_TRIANGLES 0 3))))

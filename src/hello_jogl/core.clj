@@ -1,12 +1,11 @@
 (ns hello-jogl.core
   (:gen-class)
-  (:require (hello-jogl [shader-program :as shader-program]))
+  (:require (hello-jogl [shader-program :as shader-program]
+                        [vertex-array :as vertex-array]))
   (:import (javax.media.opengl.awt GLCanvas)
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
-           (javax.media.opengl.glu GLU)
-           (java.nio FloatBuffer IntBuffer)
-           (com.jogamp.opengl.util FPSAnimator GLBuffers)))
+           (com.jogamp.opengl.util FPSAnimator)))
 
 (defn gl-listener [init-action reshape-action display-action dispose-action]
   (let [listener (proxy [GLEventListener] []
@@ -23,20 +22,6 @@
     (.add (.getContentPane frame) canvas)
     (doto frame (.setSize width height) (.setVisible true) (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE))
     (.start (FPSAnimator. canvas target-framerate true))))
-
-(defn vertex-buffer-object [gl vertex-positions]
-  (let [vertex-array (int-array 1)
-        vertex-buffer (int-array 1)
-        position-buffer (GLBuffers/newDirectFloatBuffer (float-array vertex-positions))]
-    (doto gl
-      (.glGenVertexArrays 1 (IntBuffer/wrap vertex-array))
-      (.glBindVertexArray (first vertex-array))
-      (.glGenBuffers 1 (IntBuffer/wrap vertex-buffer))
-      (.glBindBuffer javax.media.opengl.GL/GL_ARRAY_BUFFER (first vertex-buffer))
-      (.glBufferData javax.media.opengl.GL/GL_ARRAY_BUFFER (int (* (count vertex-positions) 4)) position-buffer javax.media.opengl.GL/GL_STATIC_DRAW)
-      (.glVertexAttribPointer 0 4 javax.media.opengl.GL/GL_FLOAT false 0 0)
-      (.glEnableVertexAttribArray 0))
-    (first vertex-array)))
 
 (defn gl-context-of [drawable]
   (.getGL4 (.getGL drawable)))
@@ -69,7 +54,7 @@
       (.glClearColor 0 0 0 0)
       (.glClearDepth 1)
       (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
-    (def geometry (vertex-buffer-object gl positions))
+    (def geometry (vertex-array/create gl positions))
     (def program (shader-program/create gl vs fs))))
 
 (defn on-reshape [drawable x y width height]
@@ -81,14 +66,13 @@
 (defn on-display [drawable]
   (let [gl (gl-context-of drawable)]
     (shader-program/use gl program)
-    (doto gl
-      (.glClear (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-      (.glBindVertexArray geometry)
-      (.glDrawArrays javax.media.opengl.GL/GL_TRIANGLES 0 3))))
+    (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
+    (vertex-array/draw gl geometry)))
 
 (defn on-dispose [drawable]
   (let [gl (gl-context-of drawable)]
-    (shader-program/delete gl program)))
+    (shader-program/delete gl program)
+    (vertex-array/delete gl geometry)))
 
 (defn -main
   [& args]

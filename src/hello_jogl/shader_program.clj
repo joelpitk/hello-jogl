@@ -1,4 +1,5 @@
-(ns hello-jogl.shader-program)
+(ns hello-jogl.shader-program
+  (:refer-clojure :exclude [use]))
 
 (defn create [gl vertex-shader-source fragment-shader-source]
   (let [shader-program (.glCreateProgram gl)
@@ -24,7 +25,7 @@
          vertex-shader-to-delete :vertex-shader
          fragment-shader-to-delete :fragment-shader} shader-program]
   (doto gl
-    (.glUseProgram program-to-delete)
+    (.glUseProgram 0)
     (.glDetachShader program-to-delete vertex-shader-to-delete)
     (.glDetachShader program-to-delete fragment-shader-to-delete)
     (.glDeleteShader vertex-shader-to-delete)

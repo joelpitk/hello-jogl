@@ -45,8 +45,42 @@
     out_Color = vec4(1.0f, 0.5f, 0.0f, 1.0f);
   }")
 
-(def geometry nil)
 (def program nil)
+
+(def world {:entities [{:geometry [0.0 1.0 0.0 1.0
+                                  -1.0 0.0 0.0 1.0
+                                   1.0 0.0 0.0 1.0]}
+                       {:geometry [0.0  0.0 0.0 1.0
+                                  -1.0 -1.0 0.0 1.0
+                                   1.0 -1.0 0.0 1.0]}]})
+
+
+(defn has-component? [entity component]
+  (not (nil? (entity component))))
+
+(defn has-components? [entity & components]
+  (every? (fn [component] (has-component? entity component)) components))
+
+(defn renderable? [entity]
+  (has-components? entity :geometry))
+
+(defn renderable [entities]
+  (filter renderable? entities))
+
+(def vertex-arrays {})
+
+(defn vertex-array-of [renderable-entity]
+  (vertex-arrays renderable-entity))
+
+(defn render [gl renderable-entity]
+  (let [create-vertex-array (fn [geometry] (def vertex-arrays (assoc vertex-arrays renderable-entity (vertex-array/create gl geometry))))]
+  (if (not (contains? vertex-arrays renderable-entity))
+    (create-vertex-array (renderable-entity :geometry)))
+  (vertex-array/draw gl (vertex-array-of renderable-entity))))
+
+(defn render-all [gl renderable-entities]
+  (doseq [renderable-entity renderable-entities]
+    (render gl renderable-entity)))
 
 (defn on-init [drawable]
   (let [gl (gl-context-of drawable)]
@@ -67,7 +101,7 @@
   (let [gl (gl-context-of drawable)]
     (shader-program/use gl program)
     (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-    (vertex-array/draw gl geometry)))
+    (render-all gl (renderable (world :entities)))))
 
 (defn on-dispose [drawable]
   (let [gl (gl-context-of drawable)]

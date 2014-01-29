@@ -24,13 +24,13 @@
     (.start (FPSAnimator. canvas target-framerate true))))
 
 (defn gl-context-of [drawable]
-  (.getGL4 (.getGL drawable)))
+  (.getGL3 (.getGL drawable)))
 
 (def positions [ 0.0  1.0 0.0 1.0
                 -1.0 -1.0 0.0 1.0
                  1.0 -1.0 0.0 1.0])
 (def vs
-  "#version 400
+  "#version 330
   layout(location = 0) in vec4 in_Position;
   void main(void)
   {
@@ -38,7 +38,7 @@
   }")
 
 (def fs
-  "#version 400
+  "#version 330
   out vec4 out_Color;
   void main(void)
   {

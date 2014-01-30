@@ -42,12 +42,15 @@
 
 (def program nil)
 
-(def world {:entities [{:geometry [0.0 1.0 0.0 1.0
+(def world {:entities [{:geometry [-0.5 1.0 0.0 1.0
                                    -1.0 0.0 0.0 1.0
-                                   1.0 0.0 0.0 1.0]}
+                                   0.0 0.0 0.0 1.0]}
                        {:geometry [0.0  0.0 0.0 1.0
-                                   -1.0 -1.0 0.0 1.0
-                                   1.0 -1.0 0.0 1.0]}]})
+                                   -0.5 -1.0 0.0 1.0
+                                   0.5 -1.0 0.0 1.0]}
+                       {:geometry [0.5 1.0 0.0 1.0
+                                   1.0 0.0 0.0 1.0
+                                   0.0 0.0 0.0 1.0]}]})
 
 (defn has-component? [entity component]
   (not (nil? (entity component))))
@@ -80,8 +83,7 @@
   (doto gl
     (.glClearColor 0 0 0 0)
     (.glClearDepth 1)
-    (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
-  (def program (shader-program/create gl vs fs)))
+    (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST)))
 
 (defn on-reshape [gl x y width height]
   (let [aspect (double (/ width height))]
@@ -89,6 +91,8 @@
       (.glViewport 0 0 width height))))
 
 (defn on-display [gl]
+  (if (nil? program)
+    (def program (shader-program/create gl vs fs)))
   (shader-program/use gl program)
   (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
   (render-all gl (renderable (world :entities))))

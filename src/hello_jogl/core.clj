@@ -8,11 +8,12 @@
            (com.jogamp.opengl.util FPSAnimator)))
 
 (defn gl-listener [init-action reshape-action display-action dispose-action]
-  (let [listener (proxy [GLEventListener] []
-                   (init [drawable] (init-action drawable))
-                   (reshape [drawable x y width height] (reshape-action drawable x y width height))
-                   (display [drawable] (display-action drawable))
-                   (dispose [drawable] (dispose-action drawable)))] listener))
+  (let [gl-context-of (fn [drawable] (.getGL3 (.getGL drawable)))
+        listener (proxy [GLEventListener] []
+                   (init [drawable] (init-action (gl-context-of drawable)))
+                   (reshape [drawable x y width height] (reshape-action (gl-context-of drawable) x y width height))
+                   (display [drawable] (display-action (gl-context-of drawable)))
+                   (dispose [drawable] (dispose-action (gl-context-of drawable))))] listener))
 
 (defn application [title width height target-framerate init-action reshape-action display-action cleanup-action]
   (let [frame (JFrame. title)
@@ -22,9 +23,6 @@
     (.add (.getContentPane frame) canvas)
     (doto frame (.setSize width height) (.setVisible true) (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE))
     (.start (FPSAnimator. canvas target-framerate true))))
-
-(defn gl-context-of [drawable]
-  (.getGL3 (.getGL drawable)))
 
 (def vs
   "#version 330
@@ -45,12 +43,11 @@
 (def program nil)
 
 (def world {:entities [{:geometry [0.0 1.0 0.0 1.0
-                                  -1.0 0.0 0.0 1.0
+                                   -1.0 0.0 0.0 1.0
                                    1.0 0.0 0.0 1.0]}
                        {:geometry [0.0  0.0 0.0 1.0
-                                  -1.0 -1.0 0.0 1.0
+                                   -1.0 -1.0 0.0 1.0
                                    1.0 -1.0 0.0 1.0]}]})
-
 
 (defn has-component? [entity component]
   (not (nil? (entity component))))
@@ -71,39 +68,35 @@
 
 (defn render [gl renderable-entity]
   (let [create-vertex-array (fn [geometry] (def vertex-arrays (assoc vertex-arrays renderable-entity (vertex-array/create gl geometry))))]
-  (if (not (contains? vertex-arrays renderable-entity))
-    (create-vertex-array (renderable-entity :geometry)))
-  (vertex-array/draw gl (vertex-array-of renderable-entity))))
+    (if (not (contains? vertex-arrays renderable-entity))
+      (create-vertex-array (renderable-entity :geometry)))
+    (vertex-array/draw gl (vertex-array-of renderable-entity))))
 
 (defn render-all [gl renderable-entities]
   (doseq [renderable-entity renderable-entities]
     (render gl renderable-entity)))
 
-(defn on-init [drawable]
-  (let [gl (gl-context-of drawable)]
-    (doto gl
-      (.glClearColor 0 0 0 0)
-      (.glClearDepth 1)
-      (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
-    (def program (shader-program/create gl vs fs))))
+(defn on-init [gl]
+  (doto gl
+    (.glClearColor 0 0 0 0)
+    (.glClearDepth 1)
+    (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
+  (def program (shader-program/create gl vs fs)))
 
-(defn on-reshape [drawable x y width height]
-  (let [gl (gl-context-of drawable)
-        aspect (double (/ width height))]
+(defn on-reshape [gl x y width height]
+  (let [aspect (double (/ width height))]
     (doto gl
       (.glViewport 0 0 width height))))
 
-(defn on-display [drawable]
-  (let [gl (gl-context-of drawable)]
-    (shader-program/use gl program)
-    (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-    (render-all gl (renderable (world :entities)))))
+(defn on-display [gl]
+  (shader-program/use gl program)
+  (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
+  (render-all gl (renderable (world :entities))))
 
-(defn on-dispose [drawable]
-  (let [gl (gl-context-of drawable)]
-    (shader-program/delete gl program)
-    (doseq [vertex-array (vals vertex-arrays)]
-      (vertex-array/delete gl vertex-array))))
+(defn on-dispose [gl]
+  (shader-program/delete gl program)
+  (doseq [vertex-array (vals vertex-arrays)]
+    (vertex-array/delete gl vertex-array)))
 
 (defn -main
   [& args]

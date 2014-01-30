@@ -26,9 +26,6 @@
 (defn gl-context-of [drawable]
   (.getGL3 (.getGL drawable)))
 
-(def positions [ 0.0  1.0 0.0 1.0
-                -1.0 -1.0 0.0 1.0
-                 1.0 -1.0 0.0 1.0])
 (def vs
   "#version 330
   layout(location = 0) in vec4 in_Position;
@@ -88,7 +85,6 @@
       (.glClearColor 0 0 0 0)
       (.glClearDepth 1)
       (.glEnable javax.media.opengl.GL/GL_DEPTH_TEST))
-    (def geometry (vertex-array/create gl positions))
     (def program (shader-program/create gl vs fs))))
 
 (defn on-reshape [drawable x y width height]
@@ -106,7 +102,8 @@
 (defn on-dispose [drawable]
   (let [gl (gl-context-of drawable)]
     (shader-program/delete gl program)
-    (vertex-array/delete gl geometry)))
+    (doseq [vertex-array (vals vertex-arrays)]
+      (vertex-array/delete gl vertex-array))))
 
 (defn -main
   [& args]

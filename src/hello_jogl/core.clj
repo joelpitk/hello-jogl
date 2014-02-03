@@ -52,8 +52,8 @@
                                    1.0 0.0 0.0 1.0
                                    0.0 0.0 0.0 1.0]}]})
 
-(defn has-component? [entity component]
-  (not (nil? (entity component))))
+(defn has-component? [entity component] true
+  (contains? entity component))
 
 (defn has-components? [entity & components]
   (every? (fn [component] (has-component? entity component)) components))

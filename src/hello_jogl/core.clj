@@ -1,7 +1,9 @@
 (ns hello-jogl.core
   (:gen-class)
-  (:require (hello-jogl [shader-program :as shader-program]
-                        [vertex-array :as vertex-array]))
+  (:require [hello-jogl [shader-program :as shader-program]
+                        [vertex-array :as vertex-array]
+                        [renderer :as renderer]
+                        [entity :as entity]])
   (:import (javax.media.opengl.awt GLCanvas)
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
@@ -52,17 +54,11 @@
                                    1.0 0.0 0.0 1.0
                                    0.0 0.0 0.0 1.0]}]})
 
-(defn has-component? [entity component] true
-  (contains? entity component))
-
-(defn has-components? [entity & components]
-  (every? (fn [component] (has-component? entity component)) components))
-
 (defn renderable? [entity]
-  (has-components? entity :geometry))
+  (entity/has-components? entity :geometry))
 
-(defn renderable [entities]
-  (filter renderable? entities))
+;(defn renderable [entities]
+;  (filter renderable? entities))
 
 (def vertex-arrays {})
 
@@ -75,9 +71,9 @@
       (create-vertex-array (renderable-entity :geometry)))
     (vertex-array/draw gl (vertex-array-of renderable-entity))))
 
-(defn render-all [gl renderable-entities]
-  (doseq [renderable-entity renderable-entities]
-    (render gl renderable-entity)))
+;(defn render-all [gl renderable-entities]
+;  (doseq [renderable-entity renderable-entities]
+;    (render gl renderable-entity)))
 
 (defn on-init [gl]
   (doto gl
@@ -90,12 +86,16 @@
     (doto gl
       (.glViewport 0 0 width height))))
 
+(defn draw [gl entities]
+  (renderer/render-all gl (renderer/renderable entities)))
+
 (defn on-display [gl]
   (if (nil? program)
     (def program (shader-program/create gl vs fs)))
   (shader-program/use gl program)
   (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-  (render-all gl (renderable (world :entities))))
+  ;(render-all gl (renderable (world :entities))))
+  )
 
 (defn on-dispose [gl]
   (shader-program/delete gl program)

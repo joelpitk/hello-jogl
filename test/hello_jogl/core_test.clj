@@ -8,4 +8,4 @@
     (draw ..gl-context.. ..all-entities..) => irrelevant
       (provided
         (renderer/renderable ..all-entities..) => ..renderable-entities..
-        (renderer/render-all ..gl-context.. ..renderable-entities..) => irrelevant :times 1)))
+        (renderer/render-all ..gl-context.. ..renderable-entities..) => irrelevant)))

@@ -21,3 +21,10 @@
     (renderable? ..entity..) => false
       (provided
         (entity/has-components? ..entity.. :position :geometry) => false)))
+
+(facts "about render-all"
+  (fact "renders all given entities"
+    (render-all ..gl-context.. [..entity.. ..another-entity..]) => irrelevant
+      (provided
+        (render ..gl-context.. ..entity..) => irrelevant
+        (render ..gl-context.. ..another-entity..) => irrelevant)))

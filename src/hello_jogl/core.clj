@@ -54,22 +54,6 @@
                                    1.0 0.0 0.0 1.0
                                    0.0 0.0 0.0 1.0]}]})
 
-(defn renderable? [entity]
-  (entity/has-components? entity :geometry))
-
-;(defn renderable [entities]
-;  (filter renderable? entities))
-
-(def vertex-arrays {})
-
-(defn vertex-array-of [renderable-entity]
-  (vertex-arrays renderable-entity))
-
-(defn render [gl renderable-entity]
-  (let [create-vertex-array (fn [geometry] (def vertex-arrays (assoc vertex-arrays renderable-entity (vertex-array/create gl geometry))))]
-    (if (not (contains? vertex-arrays renderable-entity))
-      (create-vertex-array (renderable-entity :geometry)))
-    (vertex-array/draw gl (vertex-array-of renderable-entity))))
 
 ;(defn render-all [gl renderable-entities]
 ;  (doseq [renderable-entity renderable-entities]
@@ -99,8 +83,9 @@
 
 (defn on-dispose [gl]
   (shader-program/delete gl program)
-  (doseq [vertex-array (vals vertex-arrays)]
-    (vertex-array/delete gl vertex-array)))
+  ;(doseq [vertex-array (vals vertex-arrays)]
+  ;  (vertex-array/delete gl vertex-array))
+  )
 
 (defn -main
   [& args]

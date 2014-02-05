@@ -14,15 +14,15 @@
           (renderable? ..another-renderable..) => true))))
 
 (facts "about renderable?"
-  (fact "entity with geometry and position is renderable"
+  (fact "entity with geometry is renderable"
     (renderable? ..entity..) => true
       (provided
-        (entity/has-components? ..entity.. :position :geometry) => true))
+        (entity/has-components? ..entity.. :geometry) => true))
 
-  (fact "entity without geometry and position is not renderable"
+  (fact "entity without geometry is not renderable"
     (renderable? ..entity..) => false
       (provided
-        (entity/has-components? ..entity.. :position :geometry) => false)))
+        (entity/has-components? ..entity.. :geometry) => false)))
 
 (facts "about render-all"
   (fact "renders all renderable entities"
@@ -33,37 +33,39 @@
         (render ..gl-context.. ..another-renderable..) => irrelevant)))
 
 (facts "about render"
-  (prerequisite (vertex-array/draw ..gl-context.. anything) => irrelevant)
+  (prerequisites
+   (get-vertex-arrays) => ..vertex-arrays..
+   (vertex-array/draw ..gl-context.. anything) => irrelevant)
   (fact "creates vertex array for entity when vertex array for entity does not exist"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for vertex-arrays ..entity..) => false
+        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => false
         (create-vertex-array-for ..gl-context.. ..entity..) => irrelevant))
 
   (fact "adds created vertex-array to vertex-arrays when vertex array for entity does not exist"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for vertex-arrays ..entity..) => false
+        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => false
         (create-vertex-array-for ..gl-context.. ..entity..) => ..created-vertex-array..
-        (add-to-vertex-arrays! ..entity.. ..created-vertex-array..) => vertex-arrays))
+        (add-to-vertex-arrays! ..entity.. ..created-vertex-array..) => ..vertex-arrays..))
 
   (fact "does not create vertex array for entity when vertex array for entity exists"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for vertex-arrays ..entity..) => true
+        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => true
         (create-vertex-array-for ..gl-context.. ..entity..) => irrelevant :times 0))
 
   (fact "does not add created vertex-array to vertex-arrays when vertex array for entity does exists"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for vertex-arrays ..entity..) => true
+        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => true
         (add-to-vertex-arrays! ..entity.. ..created-vertex-array..) => irrelevant :times 0))
 
   (fact "draws vertex array of entity"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for vertex-arrays ..entity..) => irrelevant
-        (vertex-array-of vertex-arrays ..entity..) => ..vertex-array-of-entity..
+        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => irrelevant
+        (vertex-array-of ..vertex-arrays.. ..entity..) => ..vertex-array-of-entity..
         (vertex-array/draw ..gl-context.. ..vertex-array-of-entity..) => irrelevant)))
 
 (facts "about vertex-array-exists-for"
@@ -83,3 +85,11 @@
   (fact "returns vertex array of given entity"
     (let [arrays {..entity.. ..vertex-array.. ..another-entity.. ..another-vertex-array..}]
       (vertex-array-of arrays ..entity..) => ..vertex-array..)))
+
+(facts "about dispose"
+  (fact "deletes all vertex arrays"
+    (dispose ..gl-context..) => irrelevant
+      (provided
+        (get-vertex-arrays) => {..entity.. ..vertex-array.. ..another-entity.. ..another-vertex-array..}
+        (vertex-array/delete ..gl-context.. ..vertex-array..) => irrelevant :times 1
+        (vertex-array/delete ..gl-context.. ..another-vertex-array..) => irrelevant :times 1)))

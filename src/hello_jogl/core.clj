@@ -54,11 +54,6 @@
                                    1.0 0.0 0.0 1.0
                                    0.0 0.0 0.0 1.0]}]})
 
-
-;(defn render-all [gl renderable-entities]
-;  (doseq [renderable-entity renderable-entities]
-;    (render gl renderable-entity)))
-
 (defn on-init [gl]
   (doto gl
     (.glClearColor 0 0 0 0)
@@ -71,20 +66,18 @@
       (.glViewport 0 0 width height))))
 
 (defn draw [gl entities]
-  (renderer/render-all gl (renderer/renderable entities)))
+  (renderer/render-all gl entities))
 
 (defn on-display [gl]
   (if (nil? program)
     (def program (shader-program/create gl vs fs)))
   (shader-program/use gl program)
   (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
-  ;(render-all gl (renderable (world :entities))))
-  )
+  (draw gl (:entities world)))
 
 (defn on-dispose [gl]
   (shader-program/delete gl program)
-  ;(doseq [vertex-array (vals vertex-arrays)]
-  ;  (vertex-array/delete gl vertex-array))
+  (renderer/dispose gl)
   )
 
 (defn -main

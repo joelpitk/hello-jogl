@@ -4,8 +4,7 @@
             [hello-jogl.renderer :as renderer]))
 
 (facts "about draw" :core
-  (fact "renders all renderable entities"
+  (fact "renders all entities"
     (draw ..gl-context.. ..all-entities..) => irrelevant
       (provided
-        (renderer/renderable ..all-entities..) => ..renderable-entities..
-        (renderer/render-all ..gl-context.. ..renderable-entities..) => irrelevant)))
+        (renderer/render-all ..gl-context.. ..all-entities..) => irrelevant)))

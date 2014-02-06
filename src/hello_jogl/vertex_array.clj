@@ -13,7 +13,6 @@
       (.glBindBuffer javax.media.opengl.GL/GL_ARRAY_BUFFER (first vertex-buffer-objects))
       (.glBufferData javax.media.opengl.GL/GL_ARRAY_BUFFER (int (* (count vertex-positions) 4)) vertex-position-buffer javax.media.opengl.GL/GL_STATIC_DRAW)
       (.glVertexAttribPointer 0 4 javax.media.opengl.GL/GL_FLOAT false 0 0))
-    (println (str "Created vertex array: " {:vertex-array-object (first vertex-array-objects) :vertex-buffer-object (first vertex-buffer-objects)}))
     {:vertex-array-object (first vertex-array-objects)
      :vertex-buffer-object (first vertex-buffer-objects)
      :vertex-count (/ (count vertex-positions) 4)}))
@@ -26,7 +25,6 @@
     (.glDisableVertexAttribArray 0)))
 
 (defn delete [gl vertex-array]
-  (println (str "Deleting vertex buffer: " vertex-array))
   (let [buffers-to-delete (int-array [(:vertex-buffer-object vertex-array)])
         arrays-to-delete  (int-array [(:vertex-array-object vertex-array)])]
     (doto gl

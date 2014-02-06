@@ -77,9 +77,10 @@
 
 (defn on-dispose [gl]
   (shader-program/delete gl program)
-  (renderer/dispose gl)
-  )
+  (renderer/dispose gl))
 
 (defn -main
   [& args]
   (application "Hello world!" 800 600 60 on-init on-reshape on-display on-dispose))
+
+;(-main)

@@ -29,7 +29,7 @@
     (render-all ..gl-context.. ..entities..) => irrelevant
       (provided
         (renderable ..entities..) => ..renderable-entities..
-        (get-vertex-arrays) => ..vertex-arrays..
+        (get-entity-vertex-arrays) => ..vertex-arrays..
         (delete-orphaned-vertex-arrays ..gl-context.. ..vertex-arrays.. ..renderable-entities..) => irrelevant))
 
   (fact "renders all renderable entities"
@@ -44,7 +44,6 @@
   (fact "deletes all orphaned vertex arays"
     (delete-orphaned-vertex-arrays ..gl-context.. ..vertex-arrays.. ..renderable-entities..) => irrelevant
       (provided
-       (get-vertex-arrays) => ..vertex-arrays..
        (orphaned-entities ..vertex-arrays.. ..renderable-entities..) => ..orphaned-entities..
        (vertex-arrays-of ..vertex-arrays.. ..orphaned-entities..) => [..orphan.. ..another-orphan..]
        (vertex-array/delete ..gl-context.. ..orphan..) => irrelevant :times 1
@@ -58,7 +57,6 @@
 
     (delete-orphaned-vertex-arrays ..gl-context.. ..vertex-arrays.. ..renderable-entities..) => irrelevant
       (provided
-        (get-vertex-arrays) => ..vertex-arrays..
         (orphaned-entities ..vertex-arrays.. ..renderable-entities..) => [..orphan.. ..another-orphan..]
         (remove-from-vertex-arrays! ..orphan..) => irrelevant :times 1
         (remove-from-vertex-arrays! ..another-orphan..) => irrelevant :times 1)))
@@ -84,7 +82,7 @@
 
 (facts "about render"
   (prerequisites
-    (get-vertex-arrays) => ..vertex-arrays..
+    (get-entity-vertex-arrays) => ..vertex-arrays..
     (vertex-array/draw ..gl-context.. anything) => irrelevant)
 
   (fact "creates vertex array for entity when vertex array for entity does not exist"
@@ -141,6 +139,6 @@
   (fact "deletes all vertex arrays"
     (dispose ..gl-context..) => irrelevant
       (provided
-        (get-vertex-arrays) => {..entity.. ..vertex-array.. ..another-entity.. ..another-vertex-array..}
+        (get-entity-vertex-arrays) => {..entity.. ..vertex-array.. ..another-entity.. ..another-vertex-array..}
         (vertex-array/delete ..gl-context.. ..vertex-array..) => irrelevant :times 1
         (vertex-array/delete ..gl-context.. ..another-vertex-array..) => irrelevant :times 1)))

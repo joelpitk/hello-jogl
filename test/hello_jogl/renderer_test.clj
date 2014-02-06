@@ -2,7 +2,8 @@
   (:require [midje.sweet :refer :all]
             [hello-jogl.renderer :refer :all]
             [hello-jogl.entity :as entity]
-            [hello-jogl.vertex-array :as vertex-array]))
+            [hello-jogl.vertex-array :as vertex-array]
+            [hello-jogl.material :as material]))
 
 (facts "about renderable"
   (fact "returns only renderable entities"
@@ -14,15 +15,15 @@
           (renderable? ..another-renderable..) => true))))
 
 (facts "about renderable?"
-  (fact "entity with geometry is renderable"
+  (fact "entity with geometry and material is renderable"
     (renderable? ..entity..) => true
       (provided
-        (entity/has-components? ..entity.. :geometry) => true))
+        (entity/has-components? ..entity.. :geometry :material) => true))
 
-  (fact "entity without geometry is not renderable"
+  (fact "entity without geometry and material is not renderable"
     (renderable? ..entity..) => false
       (provided
-        (entity/has-components? ..entity.. :geometry) => false)))
+        (entity/has-components? ..entity.. :geometry :material) => false)))
 
 (facts "about render-all"
   (fact "deletes all orphaned vertex arrays"
@@ -83,46 +84,53 @@
 (facts "about render"
   (prerequisites
     (get-entity-vertex-arrays) => ..vertex-arrays..
+    (material/use ..gl-context.. anything) => irrelevant
     (vertex-array/draw ..gl-context.. anything) => irrelevant)
 
   (fact "creates vertex array for entity when vertex array for entity does not exist"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => false
+        (vertex-array-exists? ..vertex-arrays.. ..entity..) => false
         (create-vertex-array-for ..gl-context.. ..entity..) => irrelevant))
 
   (fact "adds created vertex-array to vertex-arrays when vertex array for entity does not exist"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => false
+        (vertex-array-exists? ..vertex-arrays.. ..entity..) => false
         (create-vertex-array-for ..gl-context.. ..entity..) => ..created-vertex-array..
         (add-to-vertex-arrays! ..entity.. ..created-vertex-array..) => ..vertex-arrays..))
 
   (fact "does not create vertex array for entity when vertex array for entity exists"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => true
+        (vertex-array-exists? ..vertex-arrays.. ..entity..) => true
         (create-vertex-array-for ..gl-context.. ..entity..) => irrelevant :times 0))
 
   (fact "does not add created vertex-array to vertex-arrays when vertex array for entity does exists"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => true
+        (vertex-array-exists? ..vertex-arrays.. ..entity..) => true
         (add-to-vertex-arrays! ..entity.. ..created-vertex-array..) => irrelevant :times 0))
+
+  (fact "uses material of entity"
+    (prerequisite (vertex-array-exists? anything anything) => true)
+    (let [entity {:material ..material..}]
+      (render ..gl-context.. entity) => irrelevant
+        (provided (material/use ..gl-context.. ..material..) => irrelevant :times 1)))
 
   (fact "draws vertex array of entity"
     (render ..gl-context.. ..entity..) => irrelevant
       (provided
-        (vertex-array-exists-for ..vertex-arrays.. ..entity..) => irrelevant
+        (vertex-array-exists? ..vertex-arrays.. ..entity..) => irrelevant
         (vertex-array-of ..vertex-arrays.. ..entity..) => ..vertex-array-of-entity..
         (vertex-array/draw ..gl-context.. ..vertex-array-of-entity..) => irrelevant)))
 
-(facts "about vertex-array-exists-for"
+(facts "about vertex-array-exists?"
   (fact "returns true when vertex array with entity as key exists in given vertex arrays"
-    (vertex-array-exists-for {..entity.. ..vertex-array..} ..entity..) => true)
+    (vertex-array-exists? {..entity.. ..vertex-array..} ..entity..) => true)
 
   (fact "returns false when vertex array with entity as key does not exist in given vertex arrays"
-    (vertex-array-exists-for {..entity.. ..vertex-array..} ..another-entity..) => false))
+    (vertex-array-exists? {..entity.. ..vertex-array..} ..another-entity..) => false))
 
 (facts "about create-vertex-array-for"
   (fact "returns vertex array created from geometry of entity"

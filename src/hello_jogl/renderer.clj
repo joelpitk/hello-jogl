@@ -1,10 +1,11 @@
 (ns hello-jogl.renderer
   (:require [midje.sweet :refer [unfinished]]
             [hello-jogl.entity :as entity]
-            [hello-jogl.vertex-array :as vertex-array]))
+            [hello-jogl.vertex-array :as vertex-array]
+            [hello-jogl.material :as material]))
 
 (defn renderable? [entity]
-  (entity/has-components? entity :geometry))
+  (entity/has-components? entity :geometry :material))
 
 (defn renderable [entities]
   (filter renderable? entities))
@@ -19,7 +20,7 @@
 (defn remove-from-vertex-arrays! [entity]
   (reset! entity-vertex-arrays (dissoc @entity-vertex-arrays entity)))
 
-(defn vertex-array-exists-for [vertex-arrays entity]
+(defn vertex-array-exists? [vertex-arrays entity]
   (contains? vertex-arrays entity))
 
 (defn create-vertex-array-for [gl entity]
@@ -49,8 +50,9 @@
     (remove-from-vertex-arrays! orphan-entity))))
 
 (defn render [gl entity]
-  (when-not (vertex-array-exists-for (get-entity-vertex-arrays) entity)
+  (when-not (vertex-array-exists? (get-entity-vertex-arrays) entity)
     (add-to-vertex-arrays! entity (create-vertex-array-for gl entity)))
+  (material/use gl (:material entity))
   (vertex-array/draw gl (vertex-array-of (get-entity-vertex-arrays) entity)))
 
 (defn render-all [gl entities]

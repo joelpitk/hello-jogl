@@ -15,7 +15,9 @@
       (.glAttachShader shader-program vertex-shader)
       (.glAttachShader shader-program fragment-shader)
       (.glLinkProgram shader-program))
-    {:program shader-program :vertex-shader vertex-shader :fragment-shader fragment-shader}))
+    (let [program {:program shader-program :vertex-shader vertex-shader :fragment-shader fragment-shader}]
+      (println (str "Created program:" program))
+      program)))
 
 (defn use [gl shader-program]
   (.glUseProgram gl (:program shader-program)))
@@ -30,4 +32,5 @@
     (.glDetachShader program-to-delete fragment-shader-to-delete)
     (.glDeleteShader vertex-shader-to-delete)
     (.glDeleteShader fragment-shader-to-delete)
-    (.glDeleteProgram program-to-delete))))
+    (.glDeleteProgram program-to-delete))
+    (println "Deleted program:" shader-program)))

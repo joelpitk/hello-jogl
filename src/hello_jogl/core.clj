@@ -3,7 +3,8 @@
   (:require [hello-jogl [shader-program :as shader-program]
                         [vertex-array :as vertex-array]
                         [renderer :as renderer]
-                        [entity :as entity]])
+                        [entity :as entity]
+                        [materials :as materials]])
   (:import (javax.media.opengl.awt GLCanvas)
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
@@ -26,22 +27,6 @@
     (doto frame (.setSize width height) (.setVisible true) (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE))
     (.start (FPSAnimator. canvas target-framerate true))))
 
-(def vs
-  "#version 330
-  layout(location = 0) in vec4 in_Position;
-  void main(void)
-  {
-    gl_Position = in_Position;
-  }")
-
-(def fs
-  "#version 330
-  out vec4 out_Color;
-  void main(void)
-  {
-    out_Color = vec4(1.0f, 0.5f, 0.0f, 1.0f);
-  }")
-
 (def program nil)
 
 (def world {:entities [{:geometry [-1.0 1.0 0.0 1.0
@@ -51,7 +36,9 @@
                                    1.0 -1.0 0.0 1.0
                                    1.0 1.0 0.0 1.0
                                    -1.0 1.0 0.0 1.0]
-                        :material {}}]})
+
+                        :material (materials/corn-flower-blue)
+                        }]})
 
 (defn on-init [gl]
   (doto gl
@@ -68,14 +55,10 @@
   (renderer/render-all gl entities))
 
 (defn on-display [gl]
-  (if (nil? program)
-    (def program (shader-program/create gl vs fs)))
-  (shader-program/use gl program)
   (.glClear gl (bit-or javax.media.opengl.GL/GL_COLOR_BUFFER_BIT javax.media.opengl.GL2/GL_DEPTH_BUFFER_BIT))
   (draw gl (:entities world)))
 
 (defn on-dispose [gl]
-  (shader-program/delete gl program)
   (renderer/dispose gl))
 
 (defn -main

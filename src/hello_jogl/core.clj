@@ -4,7 +4,8 @@
                         [vertex-array :as vertex-array]
                         [renderer :as renderer]
                         [entity :as entity]
-                        [materials :as materials]])
+                        [materials :as materials]
+                        [geometry :as geometry]])
   (:import (javax.media.opengl.awt GLCanvas)
            (javax.swing JFrame)
            (javax.media.opengl GLEventListener)
@@ -29,16 +30,8 @@
 
 (def program nil)
 
-(def world {:entities [{:geometry [-1.0 1.0 0.0 1.0
-                                   -1.0 -1.0 0.0 1.0
-                                   1.0 -1.0 0.0 1.0
-
-                                   1.0 -1.0 0.0 1.0
-                                   1.0 1.0 0.0 1.0
-                                   -1.0 1.0 0.0 1.0]
-
-                        :material (materials/corn-flower-blue)
-                        }]})
+(def world {:entities [{:geometry geometry/quad
+                        :material materials/corn-flower-blue}]})
 
 (defn on-init [gl]
   (doto gl
@@ -61,8 +54,9 @@
 (defn on-dispose [gl]
   (renderer/dispose gl))
 
-(defn -main
-  [& args]
+(defn start []
   (application "Hello world!" 800 600 60 on-init on-reshape on-display on-dispose))
 
-;(-main)
+(defn -main
+  [& args]
+  (start))

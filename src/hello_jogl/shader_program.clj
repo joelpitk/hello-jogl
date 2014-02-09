@@ -22,6 +22,23 @@
 (defn use [gl shader-program]
   (.glUseProgram gl (:program shader-program)))
 
+(defn recompile [gl shader-program vertex-shader-source fragment-shader-source]
+  (let [program (:program shader-program)
+        vertex-shader  (:vertex-shader shader-program)
+        vertex-shader-source (into-array String [vertex-shader-source])
+        fragment-shader (:fragment-shader shader-program)
+        fragment-shader-source (into-array String [fragment-shader-source])]
+    (doto gl
+      (.glUseProgram program)
+      (.glShaderSource vertex-shader 1 vertex-shader-source nil)
+      (.glCompileShader vertex-shader)
+      (.glShaderSource fragment-shader 1 fragment-shader-source nil)
+      (.glCompileShader fragment-shader)
+      (.glLinkProgram program))
+    (let [program {:program program :vertex-shader vertex-shader :fragment-shader fragment-shader}]
+      (println (str "Recompiled program:" program))
+      program)))
+
 (defn delete [gl shader-program]
   (let [{program-to-delete :program
          vertex-shader-to-delete :vertex-shader

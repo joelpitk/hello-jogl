@@ -32,7 +32,6 @@
   (doto gl
     (.glBindVertexArray (:vertex-array-object vertex-array))
     (.glEnableVertexAttribArray 0)
-    ;(.glDrawArrays javax.media.opengl.GL/GL_TRIANGLES 0 (:vertex-count vertex-array))
     (.glDrawElements javax.media.opengl.GL/GL_TRIANGLES (:vertex-count vertex-array) javax.media.opengl.GL/GL_UNSIGNED_INT 0)
     (.glDisableVertexAttribArray 0)))
 

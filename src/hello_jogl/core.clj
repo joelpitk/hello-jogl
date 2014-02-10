@@ -54,9 +54,8 @@
 (defn on-dispose [gl]
   (renderer/dispose gl))
 
-(defn start []
-  (application "Hello world!" 800 600 60 on-init on-reshape on-display on-dispose))
-
 (defn -main
   [& args]
-  (start))
+  (application "Hello world!" 800 600 60 on-init on-reshape on-display on-dispose))
+
+(comment (-main))
